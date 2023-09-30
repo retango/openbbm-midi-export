@@ -78,6 +78,7 @@ private slots:
 
     void slotShowOptionsDialog();
     void slotChangeWorkspaceLocation();
+    void slotSaveAllDrm();
     void slotShowAboutDialog();
     void slotOpenUrlManual();
     void slotOpenUrlForum();
@@ -185,6 +186,7 @@ public:
     QMenu* mp_toolsMenu;
     QAction* mp_UpdateFirmware;
     QAction* mp_ShowUpdateDialog;
+    QAction* mp_SaveAllDrm;
     QAction* mp_ColorOptions;
     QAction* mp_ListUsb;
     QAction* mp_ShowOptionsDialog;

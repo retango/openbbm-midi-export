@@ -26,6 +26,9 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 
+#include "beatspanel/songwidget.h"
+#include "beatspanel/songpartwidget.h"
+
 #include "beatspanel/beatspanel.h"
 #include "beatspanel/songfolderview.h"
 #include "debug.h"
@@ -471,6 +474,9 @@ void MainWindow::createActions()
     mp_ChangeWorkspaceLocation = this->buildAction(tr("Set Workspace Location"), tr("Change the BeatBuddy Manager Workspace location"), tr("Change the BeatBuddy Manager Workspace location"), QKeySequence(Qt::AltModifier | Qt::Key_F2));
     connect(mp_ChangeWorkspaceLocation, SIGNAL(triggered()), this, SLOT(slotChangeWorkspaceLocation()));
 
+    mp_SaveAllDrm = this->buildAction(tr("Bulk Export MIDI"), tr("Bulk Export MIDI Files in Current Folder"), tr("Bulk Export MIDI Files in Current Folder"), QKeySequence(Qt::AltModifier | Qt::Key_F9));
+    connect(mp_SaveAllDrm, SIGNAL(triggered()), this, SLOT(slotSaveAllDrm()));
+
     mp_ShowOptionsDialog = this->buildAction(tr("Buffering time"), tr("Show Options Dialog"), tr("Show Options Dialog"), QKeySequence(Qt::AltModifier | Qt::Key_F3));
     connect(mp_ShowOptionsDialog, SIGNAL(triggered()), this, SLOT(slotShowOptionsDialog()));
 
@@ -605,6 +611,7 @@ void MainWindow::createMenus()
     mp_toolsMenu->addAction(mp_ChangeWorkspaceLocation);
     mp_toolsMenu->addAction(mp_ShowOptionsDialog);
     mp_toolsMenu->addAction(mp_ShowUpdateDialog);
+    mp_toolsMenu->addAction(mp_SaveAllDrm);
     //TODO: check this easter egg created by Daefecator.
     if (QFileInfo(QDir(QApplication::applicationDirPath()).absoluteFilePath("Daefecator")).exists()) {
         mp_toolsMenu->addSeparator();
@@ -2685,6 +2692,69 @@ void MainWindow::slotShowOptionsDialog()
       // Save the setting by using the value actually stored in player
       Settings::setBufferingTime_ms(mp_PlaybackPanel->bufferTime_ms());
    }
+}
+
+void MainWindow::slotSaveAllDrm(){
+   QList<BeatFileWidget*> beatFiles = this->findChildren<BeatFileWidget*>();
+   static QRegularExpression re("[\\\"/<|>:*_?]+");
+   static QRegularExpression remv("[\\n\\r]");
+
+   // Get the number of items to process
+   int numItems = beatFiles.count();
+
+   // Create a progress dialog
+   QProgressDialog progressDialog("Exporting MIDI files of current folder to User Library/Midi Sources...", "Cancel", 0, numItems, this);
+   progressDialog.setWindowModality(Qt::WindowModal);
+   progressDialog.setMinimumDuration(10);
+   int i=0;
+
+   foreach (BeatFileWidget *beatFile, beatFiles) {
+      // Update the progress dialog
+      progressDialog.setValue(i++);
+      if (progressDialog.wasCanceled()) {
+            break;
+      }
+      auto ix = beatFile->modelIndex();
+      //auto parent1 = ix.parent().sibling(ix.row(), AbstractTreeItem::NAME).data().toString();
+      auto pattern_type_nr = ix.sibling(ix.row(), AbstractTreeItem::TRACK_TYPE).data().toString();
+      QString pattern_type ="Null";
+      if (pattern_type_nr=="0"){pattern_type= "a.Intro";}
+      else if (pattern_type_nr=="1"){pattern_type= "z.Outro";}
+      else if (pattern_type_nr=="2"){pattern_type= "a.Main Loop";}
+      else if (pattern_type_nr=="3"){pattern_type= "b.Fill";}
+      else if (pattern_type_nr=="4"){pattern_type= "c.Transition";}
+
+      SongPartWidget* partWidget = qobject_cast<SongPartWidget*>(beatFile->parent()->parent()->parent());
+      SongWidget* songWidget = qobject_cast<SongWidget*>(beatFile->parent()->parent()->parent()->parent());
+
+      QString patternName = beatFile->getPatternName().replace(re, "_");
+      patternName = patternName.remove(remv);
+      QString partName = partWidget->getPartName().replace(re, "_");
+      QString songBPM = songWidget->getBPM().replace(re, "_");
+      QString songDrumSet = songWidget->getDrumSet().replace(re, "_");
+
+      QString songName = songWidget->getSongName().replace(re, "_");
+      songName += " (BPM " + songBPM +") (DrumSet "+ songDrumSet+")";
+
+      auto songFolder = ix.parent().parent().parent().parent().data(AbstractTreeItem::NAME).toString().replace(re, "_");
+      //auto exported = ix.sibling(ix.row(), AbstractTreeItem::EXPORT_DIR).data().toString().replace(re, "_");
+
+      if (pattern_type_nr == "0" || pattern_type_nr == "1") {partName = "";}
+      else {partName = partName + "-";} //if type is Intro or Outro, that is also the partName
+
+      auto filename = partName + pattern_type + "-"+patternName+ ".mid";
+
+      QDir songPath = QDir(Workspace().userLibrary()->libMidiSources()->currentPath() + "/Bulk Midi Export/"+ songFolder + "/" + songName);
+
+      songPath.mkpath(songPath.absolutePath());
+
+      filename = songPath.absoluteFilePath(filename);
+
+      beatFile->exportMIDI(filename);
+
+    }
+   // Close the progress dialog
+   progressDialog.close();
 }
 
 void MainWindow::slotChangeWorkspaceLocation()
