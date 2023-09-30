@@ -4,9 +4,9 @@
   </a>
 </div>
 
-This is a fork of SingularSound BeatBuddy Manager that:
+This is a fork of SingularSound's BeatBuddy Manager that:
 * Fixes Midi Export
-* Adds Bulk Midi export
+* Adds Bulk Midi Export
 
 It's based on version 133bb0b of Nov 20, 2020 of the BeatBuddy Manager
 ### Fixes in Midi Export
