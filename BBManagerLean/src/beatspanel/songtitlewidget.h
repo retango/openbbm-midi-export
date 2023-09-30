@@ -15,6 +15,30 @@ class MySpinBox;
 class MyComboBox;
 class BeatsProjectModel;
 
+class MySpinBox : public QSpinBox
+{
+    Q_OBJECT
+public:
+    explicit MySpinBox(QWidget *parent = nullptr);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+    void focusInEvent(QFocusEvent* event);
+    void focusOutEvent(QFocusEvent* event);
+};
+
+class MyComboBox : public QComboBox
+{
+    Q_OBJECT
+public:
+    explicit MyComboBox(QWidget *parent = nullptr);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+    void focusInEvent(QFocusEvent* event);
+    void focusOutEvent(QFocusEvent* event);
+};
+
 class SongTitleWidget : public QFrame
 {
    Q_OBJECT
@@ -27,6 +51,9 @@ public:
    void setUnsavedChanges(bool unsaved);
    void populateDrmCombo(QModelIndex defaultDrmIndex);
    int indexOfDrmFileName(const QString &refDrmFileName);
+   QString getSongName(){return mp_Title->displayText();};
+   QString getBPM(){return mp_TempoSpin->cleanText();};
+   QString getDrumSet(){return mp_DrmCombo->currentText();};
 
 signals:
    void sigTempoChangeByModel(int tempo);
@@ -82,29 +109,7 @@ private:
 
 };
 
-class MySpinBox : public QSpinBox
-{
-   Q_OBJECT
-public:
-   explicit MySpinBox(QWidget *parent = nullptr);
 
-protected:
-   bool eventFilter(QObject *obj, QEvent *event);
-   void focusInEvent(QFocusEvent* event);
-   void focusOutEvent(QFocusEvent* event);
-};
-
-class MyComboBox : public QComboBox
-{
-   Q_OBJECT
-public:
-   explicit MyComboBox(QWidget *parent = nullptr);
-
-protected:
-   bool eventFilter(QObject *obj, QEvent *event);
-   void focusInEvent(QFocusEvent* event);
-   void focusOutEvent(QFocusEvent* event);
-};
 
 
 #endif // SONGTITLEWIDGET_H

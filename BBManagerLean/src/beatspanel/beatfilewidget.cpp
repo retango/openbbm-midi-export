@@ -28,6 +28,8 @@
 #include <QSound>
 #include <QDebug>
 
+#include "beatspanel/songwidget.h"
+
 /*
  * INTERNAL CLASS DragButton
  */
@@ -391,12 +393,13 @@ void BeatFileWidget::exportMIDI(const QString& destination)
     if (filename.isEmpty()) {
         return;
     }
-
+    SongWidget* songWidget = qobject_cast<SongWidget*>(parent()->parent()->parent()->parent());
+    int songBPM = songWidget->getBPM().toInt();
     // 2 - export MIDI
     MIDIPARSER_MidiTrack data(ix.sibling(ix.row(), AbstractTreeItem::RAW_DATA).data().toByteArray());
     if (!data.event.size())
         return;
-    data.write_file(filename.toStdString());
+    data.write_file(filename.toStdString(), songBPM);
 }
 
 void BeatFileWidget::openAutopilotSettings()

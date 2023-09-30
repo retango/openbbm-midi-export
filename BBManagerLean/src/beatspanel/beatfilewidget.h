@@ -29,6 +29,8 @@ class BeatFileWidget : public SongFolderViewItem, public CopyPaste::Copyable, pu
 public:
    explicit BeatFileWidget(BeatsProjectModel* p_Model, QWidget* parent = nullptr);
 
+
+   QString getPatternName(){return mp_FileButton->text();};
    void setLabel(QString const& label);
 
    void populate(QModelIndex const& modelIndex);

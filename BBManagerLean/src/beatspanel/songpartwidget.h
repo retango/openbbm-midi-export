@@ -31,6 +31,7 @@ public:
    void parentAPBoxStatusChanged();
    void updateTransMain(bool hasOutro = false);
    void updateOnDeletedChild();
+   QString getPartName() {return partName;};
 
    // Accessors
    void setIntro(bool intro);
@@ -42,6 +43,7 @@ public:
 
    PartColumnWidget *getChildItemAt(int i);
    QString readUpdatePartName(char CRUD, int start = 0, int end = 0);
+
 signals:
    void sigIsFirst(bool first);
    void sigIsLast(bool last);

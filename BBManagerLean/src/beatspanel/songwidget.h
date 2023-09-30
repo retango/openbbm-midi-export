@@ -6,6 +6,8 @@
 #include <QModelIndex>
 #include <QSet>
 
+#include "songtitlewidget.h"
+
 #include "newpartwidget.h"
 #include "songfolderviewitem.h"
 #include "songpartwidget.h"
@@ -29,6 +31,9 @@ public:
    void updateLayout();
    void dataChanged(const QModelIndex &left, const QModelIndex &right);
    void UpdateAP();
+   QString getSongName(){return mp_SongTitleWidget->getSongName();};
+   QString getBPM(){return mp_SongTitleWidget->getBPM();};
+   QString getDrumSet(){return mp_SongTitleWidget->getDrumSet();};
 
    // Hack for header column width
    int headerColumnWidth(int columnIndex);
