@@ -19,6 +19,10 @@
 #include <iterator>
 
 
+#include <map>
+#include <algorithm>
+#include <QDebug>
+
 
 
 /*******************************************************************************
@@ -246,7 +250,15 @@ inline void swap(MinGW_sucks_ass<S> &one, MinGW_sucks_ass<S> &two) noexcept
 { one.swap(two); }
 #endif
 
-void MIDIPARSER_MidiTrack::write_file(const std::string& name) const
+bool compareTicks(const MIDIPARSER_MidiEvent& a, const MIDIPARSER_MidiEvent& b) {
+    return a.tick < b.tick;
+}
+
+#define TARGET_NOTE_LENGTH 50
+#define MIN_NOTE_DISTANCE 3
+#define MIN_NOTE_LENGTH 5
+
+void MIDIPARSER_MidiTrack::write_file(const std::string& name, int file_bpm) const
 {
     /* preparing track */
 #ifdef __MINGW32__
@@ -255,6 +267,7 @@ void MIDIPARSER_MidiTrack::write_file(const std::string& name) const
     auto trs = make_reverse(std::ostringstream());
 #endif
     /* copyleft */
+    std::string newName = name;
     std::string comment("MIDI Editor v.56047 (c) Singular Sound");
     const char zero = 0x00;
     trs << zero // offset
@@ -269,25 +282,50 @@ void MIDIPARSER_MidiTrack::write_file(const std::string& name) const
         << char([this] { char ret = -1; for (auto den = timeSigDen; den; ++ret, den >>= 1); return ret; }()) // denumerator, log2(timeSigDen)
         << char(24) // MIDI Clocks per quarter note
         << char(8) // Number of 1/32 notes per 24 MIDI clocks
-           ;
+        ;
+
+    if (pickupNotesLength >0){
+        qDebug() << "filename " << QString::fromStdString(name) << " pickupNotesLength " << pickupNotesLength;
+    }
+    if (bpm>0) file_bpm=bpm;
+    if (file_bpm>0) {
+        int midi_tempo = 60000000 / file_bpm;
+        trs << zero // offset
+            << char(0xFF) << char(0x51) << char(0x03) // Tempo Meta Event
+            << char ((midi_tempo  >> 16) & 0xFF)
+            << char ((midi_tempo  >> 8) & 0xFF)
+            << char (midi_tempo   & 0xFF)
+            ;
+    }
+/*
+This message consists of six bytes of data. The first byte is the status byte and has a hexadecimal value of 0xFF,
+which means that this is a meta message. The second byte is the meta message type 0x51 and signifies that this is a set tempo message.
+The third byte has the value 0x03, which means that there are three bytes remaining. The remaining three bytes carry the number of microseconds per quarter note.
+The following is an example of a MIDI set tempo meta message.
+0xFF 0x51 0x03 0x07 0xA1 0x20
+The status byte 0xFF shows that this is a meta message. The second byte is the meta type 0x51 and signifies that this is a set tempo meta message.
+The third byte is 3, which means that there are three remaining bytes.
+These three bytes form the hexadecimal value 0x07A120 (500000 decimal), which means that there are 500,000 microseconds per quarter note.
+Since there are 60,000,000 microseconds per minute, the message above translates to: set the tempo to 60,000,000 / 500,000 = 120 quarter notes per minute (120 beats per minute).
+*/
 
     {
         /* note on events */
         std::set<char> on;
         auto sz = event.size();
-        int pos=0;
+        //int pos=0;
 
         // detect note offs.. this won't take many notes to figure out
         bool writeOffs=true; // default is no note-offs unless you FIND one.
         std::set<char> off;
         for (auto i = 0u; i < sz && event[i].tick <= nTick; ++i) {
             if (1==event[i].type || 0==event[i].vel) { // note-off or zero vel note!
-                fprintf(stderr, "found noteoff or zero vel\n");
+                //fprintf(stderr, "found noteoff or zero vel\n");
                 writeOffs=false;
                 break;
             }
             if (off.count(event[i].note)) { // found two notes without a noteoff in between
-                fprintf(stderr, "found noteon without noteoff\n");
+                //fprintf(stderr, "found noteon without noteoff\n");
                 writeOffs = true;
                 break;
             } else {
@@ -295,57 +333,73 @@ void MIDIPARSER_MidiTrack::write_file(const std::string& name) const
             }
         }
 
-        std::vector<MIDIPARSER_MidiEvent> offs(sz);
-        if (writeOffs) {
-            int j=0;
-            for (auto i = 0u; i < sz && event[i].tick <= nTick; ++i) {
-                int newtick = (event[i].tick+50 < nTick ? event[i].tick+50 : nTick);
-                MIDIPARSER_MidiEvent offev(newtick, event[i].note, 0, 1);
-                offs[j++] = offev;
-            }
-        }
-        std::vector<MIDIPARSER_MidiEvent> newEvent(sz*2);
-        {
-            auto itEvent = event.begin();
-            auto itEventEnd = event.end();
-            auto itOff = offs.begin();
-            auto itOffEnd = offs.end();
-            while (itEvent != itEventEnd && itOff != itOffEnd) {
-                MIDIPARSER_MidiEvent ev = *itEvent;
-                MIDIPARSER_MidiEvent offev = *itOff;
 
-                if (ev.tick<=offev.tick) {
-                    newEvent.push_back(ev);
-                    itEvent++;
-                } else {
-                    newEvent.push_back(offev);
-                    itOff++;
+        std::vector<MIDIPARSER_MidiEvent> newEvent;
+        if (writeOffs) {
+            //if writeOffs, separate events into a vector of events for each note number, to find the maximum length of the note off
+            std::map<int, std::vector<MIDIPARSER_MidiEvent>> eventMap; // for each note, a vector of events
+            for (auto i = 0; i < sz ; ++i) {
+                if (event[i].type==0) {
+                    eventMap[event[i].note].push_back(event[i]);
                 }
             }
-            while (itEvent != itEventEnd) {
-                newEvent.push_back(*itEvent++);
+            int onTick, offTickLimit, offTick;
+            for (const auto& keyValuePair : eventMap) {
+                int note = keyValuePair.first;
+                int eventCount=keyValuePair.second.size();
+                //std::sort(keyValuePair.second.begin(), keyValuePair.second.end(), compareTicks);
+                for (auto i = 0; i <eventCount; ++i) {
+                    onTick =keyValuePair.second[i].tick;
+                    offTick = onTick + TARGET_NOTE_LENGTH;
+                    if (i < (eventCount-1)) { // there's another note of the same number ahead
+                        //the note Off must be before the beggining of the next note of the same number minus distance
+                        offTickLimit = keyValuePair.second[i+1].tick - MIN_NOTE_DISTANCE;
+                        if (offTick > offTickLimit) {
+                            offTick = offTickLimit;
+                        }
+                    }
+                    if (offTick - onTick >= MIN_NOTE_LENGTH) { //if the resulting note lenght is negative of lower than the minimum, don't write it
+                        newEvent.push_back(keyValuePair.second[i]);
+                        newEvent.push_back(MIDIPARSER_MidiEvent(offTick, note, 0, 0));
+                    }
+                }
             }
-            while (itOff != itOffEnd) {
-                newEvent.push_back(*itOff++);
-            }
-            offs.clear();
         }
-
+        else {
+            for (auto i = 0u; i < sz; ++i) {
+                newEvent.push_back(event[i]);
+            }
+        }
+        std::sort(newEvent.begin(), newEvent.end(), compareTicks);
+        int offset=0; //using offset to correct negative ticks when there are pickup notes - shifts the pattern one bar
         sz=newEvent.size();
         if (sz) {
-            trs << var_q(newEvent[0].tick-0) // start offset
-                    << char(0x99) //  Note ON for Channel 10 (running status)
-                       ;
-            pos=newEvent[0].tick;
+            if (newEvent[0].tick <0) {
+                offset=barLength;
+                //for patterns with pickup notes, first ticks are negative - so it shifts the pattern one bar
+                //add "(PickUp)" to the file name
+                std::string lowercaseName = newName;
+                std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), ::tolower);
+                // Check if the ".mid" extension is present
+                std::size_t pos = lowercaseName.find(".mid");
+                if (pos != std::string::npos) {
+                    // Extension found
+                    newName = newName.substr(0, pos) + " (Pickup).mid";
+                }
+            }
+            trs << var_q(newEvent[0].tick+offset) //
+                << char(0x99) //  Note ON for Channel 10 (running status)
+                ;
+            //pos=newEvent[0].tick;
         }
-        for (auto i = 0u; i < sz && newEvent[i].tick <= nTick; ++i) {
+        for (auto i = 0u; i < sz ; ++i) {
 
             if (i) trs << var_q(newEvent[i].tick - newEvent[i-1].tick);
 
-            if (i) pos+=(newEvent[i].tick - newEvent[i-1].tick);
+            //if (i) pos+=(newEvent[i].tick - newEvent[i-1].tick);
             trs << char(newEvent[i].note) << char(newEvent[i].vel);
         }
-        fprintf(stderr, "sz:%d\n", sz);
+        //fprintf(stderr, "sz:%d\n", sz);
     }
 
     trs << zero // offset
@@ -355,11 +409,11 @@ void MIDIPARSER_MidiTrack::write_file(const std::string& name) const
 #ifdef __MINGW32__
     auto trk = trs.stream->str();
     /* writing the result file as a one-liner */
-    make_reverse(MinGW_sucks_ass<std::ofstream>(name, std::ios::out | std::ios::binary))
+    make_reverse(MinGW_sucks_ass<std::ofstream>(newName, std::ios::out | std::ios::binary))
 #else
     auto trk = trs.stream.str();
     /* writing the result file as a one-liner */
-    make_reverse(std::ofstream(name, std::ios::out | std::ios::binary))
+    make_reverse(std::ofstream(newName, std::ios::out | std::ios::binary))
 #endif
         /* header */
         << 'MThd' // file signature
@@ -373,6 +427,7 @@ void MIDIPARSER_MidiTrack::write_file(const std::string& name) const
         << trk // track content
         ;
 }
+
 
 /*****************************************************************************
  **                    INTERNAL GLOBAL VARIABLE

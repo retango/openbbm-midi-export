@@ -73,7 +73,7 @@ PACK typedef struct MIDIPARSER_MidiTrack {
     MIDIPARSER_MidiTrack& operator=(const MIDIPARSER_MidiTrack& mt) { memcpy(this, &mt, header_size()); event = mt.event; return *this; }
     operator QByteArray() const;
 
-    void write_file(const std::string& name) const;
+    void write_file(const std::string& name, int file_bpm=0) const;
 
 } PACKED MIDIPARSER_MidiTrack;
 
