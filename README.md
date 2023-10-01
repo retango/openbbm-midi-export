@@ -18,7 +18,10 @@ Under tools, you'll find the "Bulk Midi Export (Alt+F9)" option. This option exp
 ### Using it
 You can compile it following the instruction below. Alternatively, I created a compiled version for Windows. You should first install the original BeatBuddy Manager (https://s3.amazonaws.com/mybeatbuddy/1.6.5/BeatBuddy_Manager_lite_1.6.5.exe), and set up your project and the BB Workspace. Then download "Release For Windows.zip" file from releases (of from the root of this folder) and extract into any folder in Windows, from where you can wun the included BBManager-MidiExport.exe file.
 
-### Modified Files:
+### Using it
+You can compile it following the instruction below. Alternatively, I created a compiled version for Windows. You should first install the original BeatBuddy Manager (https://s3.amazonaws.com/mybeatbuddy/1.6.5/BeatBuddy_Manager_lite_1.6.5.exe), and set up your project and the BB Workspace. Then download "Release For Windows.zip" file from releases (of from the root of this folder) and extract into any folder in Windows, from where you can wun the included BBManager-MidiExport.exe file.
+
+### Modified Files
 * src: mainwindow.cpp, mainwindow.h
 * src/beatspanel: beatfilewidget.cpp,  beatfilewidget.h, songpartwidget.h, songtitlewidget.h, songwidget.h
 * src/model/filegraph: midiparser.cpp, midiparser.h
