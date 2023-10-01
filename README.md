@@ -15,6 +15,9 @@ Midi Export in the original BBManager was not working at all. Invalid midi files
 ### New Bulk Export feature
 Under tools, you'll find the "Bulk Midi Export (Alt+F9)" option. This option exports all the midi files in the current song folder. The process creates a folder inside user_lib/midi_sources (within BBWorkspace) named "Bulk Midi Export". It creates a subfolder with the same name as the Beat Buddy song folder (the one in the lefthand tree of the BB Manager application). It then creates a subfolder for each song, adding the BPM and Drum Kit Name to the folder name (e.g. "Blues 1 (BPM 100) (DrumSet Standard)"). Within each song subfolder, the process exports all the midi files of the song, adding the name of the part (a.Intro, Part 1, Part 2, Part 3, etc.. z.Otro), the the file type (a.Main Loop, b.Fill, c.Transition), and then the actual file name that appears on BB Manager.
 
+### Using it
+You can compile it following the instruction below. Alternatively, I created a compiled version for Windows. You should first install the original BeatBuddy Manager (https://s3.amazonaws.com/mybeatbuddy/1.6.5/BeatBuddy_Manager_lite_1.6.5.exe), and set up your project and the BB Workspace. Then download "Release For Windows.zip" file from releases (of from the root of this folder) and extract into any folder in Windows, from where you can wun the included BBManager-MidiExport.exe file.
+
 ### Modified Files:
 * src: mainwindow.cpp, mainwindow.h
 * src/beatspanel: beatfilewidget.cpp,  beatfilewidget.h, songpartwidget.h, songtitlewidget.h, songwidget.h
