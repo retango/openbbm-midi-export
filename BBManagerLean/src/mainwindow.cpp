@@ -2710,7 +2710,8 @@ void MainWindow::slotSaveAllDrm(){
 
    foreach (BeatFileWidget *beatFile, beatFiles) {
       // Update the progress dialog
-      progressDialog.setValue(i++);
+      i++;
+      progressDialog.setValue(i);
       if (progressDialog.wasCanceled()) {
             break;
       }
