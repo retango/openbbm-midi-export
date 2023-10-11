@@ -191,7 +191,7 @@ DrumsetPanel::DrumsetPanel(QWidget *parent)
     , mDrumSetMaker(nullptr)
 {
     // Create a new drumset model
-    mp_drmMakerModel = new DrmMakerModel(Workspace().userLibrary()->libWaveSources()->currentPath());
+    mp_drmMakerModel = new DrmMakerModel(Workspace().userLibrary()->libWaveSources()->defaultPath());
     // Observe instrument array
     connect(mp_drmMakerModel, SIGNAL(instrumentAdded(int)), this, SLOT(instrumentAdded(int)));
     connect(mp_drmMakerModel, SIGNAL(instrumentRemoved(int)), this, SLOT(instrumentRemoved(int)));
