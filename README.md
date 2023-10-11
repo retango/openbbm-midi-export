@@ -7,21 +7,28 @@
 This is a fork of SingularSound's BeatBuddy Manager that:
 * Fixes Midi Export
 * Adds Bulk Midi Export
+* Addresses issue 66: wav file location when processing Drumsets
 
 It's based on version 133bb0b of Nov 20, 2020 of the BeatBuddy Manager
 ### Fixes in Midi Export
-Midi Export in the original BBManager was not working at all. Invalid midi files, overlaps on same notes, etc. Here the code is re-written, and seems to work fine. For patterns with Pickup Notes, theMidi file created completes a full bar, and adds the string "(Pickup)" at the end of the file name.
+Midi Export in the original BBManager was not working on many beats. Invalid midi files, overlaps on same notes, etc. Here the code is re-written, and seems to work fine. For patterns with Pickup Notes, theMidi file created completes a full bar, and adds the string "(Pickup)" at the end of the file name.
 
 ### New Bulk Export feature
 Under tools, you'll find the "Bulk Midi Export (Alt+F9)" option. This option exports all the midi files in the current song folder. The process creates a folder inside user_lib/midi_sources (within BBWorkspace) named "Bulk Midi Export". It creates a subfolder with the same name as the Beat Buddy song folder (the one in the lefthand tree of the BB Manager application). It then creates a subfolder for each song, adding the BPM and Drum Kit Name to the folder name (e.g. "Blues 1 (BPM 100) (DrumSet Standard)"). Within each song subfolder, the process exports all the midi files of the song, adding the name of the part (a.Intro, Part 1, Part 2, Part 3, etc.. z.Otro), the the file type (a.Main Loop, b.Fill, c.Transition), and then the actual file name that appears on BB Manager.
 
+#Addresses issue 66
+Original BBManager saves wav files on wrong folders under certain conditions (ee https://github.com/SingularSound/openbbm/issues/66)
+
 ### Using it
-You can compile this fork following the instruction below. Alternatively, I created a compiled version for Windows. (I was not able to compile it as a "release" version, but as a "debug" version - the "release" version crashed, and after countless hours still can not find why. So this version will be a little slower than the original one. Please let me know if you are able to compile it correctly, and I'll upload it). You should first install the original BeatBuddy Manager (https://s3.amazonaws.com/mybeatbuddy/1.6.5/BeatBuddy_Manager_lite_1.6.5.exe), and set up your project and the BB Workspace. Then download the zip file from releases (https://github.com/retango/openbbm-midi-export/releases/download/v1.0.1/BBManager-Midi.Export.zip) and extract into any folder in Windows, from where you can run the included BBManager-MidiExport.exe file. 
+You can compile this fork following the instruction below. Alternatively, I created a compiled version for Windows. You should first install the original BeatBuddy Manager (https://s3.amazonaws.com/mybeatbuddy/1.6.5/BeatBuddy_Manager_lite_1.6.5.exe), and set up your project and the BB Workspace. Then download the zip file from releases (https://github.com/retango/openbbm-midi-export/releases/download/v1.0.1/BBManager-Midi.Export.zip) and extract into any folder in Windows, from where you can run the included BBManager-MidiExport.exe file. 
 
 ### Modified Files
 * src: mainwindow.cpp, mainwindow.h
 * src/beatspanel: beatfilewidget.cpp,  beatfilewidget.h, songpartwidget.h, songtitlewidget.h, songwidget.h
 * src/model/filegraph: midiparser.cpp, midiparser.h
+* src/drmmaker/DrumsetPanel.cpp
+
+### below original readme:
 
 # Getting Started
 
