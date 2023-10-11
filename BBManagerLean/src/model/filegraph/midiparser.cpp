@@ -420,7 +420,8 @@ Since there are 60,000,000 microseconds per minute, the message above translates
         << 6 // header length
         << short(0) // format
         << short(1) // track count
-        << short(barLength*timeSigDen/timeSigNum/4) // ticks per quarter note
+        //<< short(barLength*timeSigDen/timeSigNum/4); // Original - Fails at compile time in release!!!!
+        << short(tpqn) // use tpqn, don't understand why the original formula above - ticks per quarter note
         /* track */
         << 'MTrk' // track signature
         << int(trk.size()) // track length
